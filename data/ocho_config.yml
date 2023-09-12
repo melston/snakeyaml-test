@@ -1,0 +1,133 @@
+global_vars:                      # variables defined here may be used in following configurations
+  dsl_root_dir: ./output          # used to calculate the full-qualified-name for import statements
+
+project_name: my_digital_prj      # used in the header of generated files
+project_type: digital       # supported type: digital, analog
+
+common_input:
+  design_xlsx: OchoSampleFiles/j7es_design.xlsx
+  hardware_xlsx: OchoSampleFiles/j7es_hardware.xlsx
+  tdl_list: OchoSampleFiles/j7es_jazz_tdl_list_file
+  convmgr_xlsx: OchoSampleFiles/ocho_template.xlsx
+  testflow_config:
+    config_file: OchoSampleFiles/C28PTestFlowConfig.xls
+    board_type: [Include, FINAL_RPC]
+  testdef_config: OchoSampleFiles/TestDefConfig.xls
+  ncg_yml_files: OchoSampleFiles/NCG_TM/*.yml   # a single file path (may with wildcard) or a list of paths like [xx/xx/a*.yml, xx/yy/other.yml]
+  async_port_filters:
+    contains: ['pASYNC']    # regex to filter out async ports
+  test_table_template_ods: OchoSampleFiles/Ocho_TestTable_Template.ods
+  bin_config: OchoSampleFiles/BinConfig.xls
+
+cmap:
+  output: ${dsl_root_dir}/j7es_cmap.csv              # *.csv, *.ods, *.xls, *.xlsx allowed
+
+dutboard:
+  dsl_output: ${dsl_root_dir}/j7es.dbd              # *.dbd allowed only
+
+convmgr:
+  subflow_xlsx_prefix: ${dsl_root_dir}/subflow/j7es_sf_
+  opseq_csv: ${dsl_root_dir}/opseq/j7es_opseq.csv               # suffix must be .csv
+  opseq_init_csv: ${dsl_root_dir}/opseq/j7es_opseq_init.csv     # suffix must be .csv
+  test_proc:
+    parametric_measure:
+      output_csv_prefix: ${dsl_root_dir}/subflow/test_proc/j7es_parametric_measure_
+      pattern_name_prefix: patterns.
+  # optional
+  opseq_pat_fqn_prefix: aa.bb.cc
+  burst_name_suffix: _BRST # _MPB by default
+  tdl_list_summary: ${dsl_root_dir}/log/tdl_list_summary.csv
+
+supply_level:
+  # optional
+#  import:
+#    - a.b.c
+#    - d.e.f
+  # User needs to config at least one of the following choices
+  dsl_output_prefix: ${dsl_root_dir}/supply_level_spec/j7es_supply_level   # _XXX.spec would be appended to each generated files
+  pin_fixed_values:
+    voltage_range: 1.9V
+    iclamp: 700mA
+    iclamp_range: 700mA
+
+func_level_per_tech:
+  # optional
+#  import:
+#    - i.j.k
+#    - x.y.z
+  dsl_output_prefix: ${dsl_root_dir}/func_level_by_tech/j7es_func_level     # _XXX.csv would be appended to each generated files
+
+func_level_per_spec:
+  # optional
+#  import_for_var:
+#    - i.j.k
+#    - x.y.z
+  import_for_value: # generated var spec is imported by default
+    - mainspecs.levels.domainlevelvariables
+    - mainspecs.levels.domainlevelvalues
+  import:  # generated var & value specs are imported by default
+    - common.allgroups.groups
+    - mainspecs.levels.domainlevelvalues
+  dsl_output_prefix: ${dsl_root_dir}/func_level_by_spec/j7es_func_level     # _XXX.spec would be appended to each generated files
+
+supply_func_combine_spec:
+  import:
+      - level.imports.domainlevelvalues  # modify according to your project setting.
+  dsl_output_dir: ${dsl_root_dir}/func_level_by_spec/
+
+async_level_per_spec:
+  import:  # func_level specs are imported by default
+    - common.allgroups.j7es_pin_groups
+    - levels.imports.level_vars
+  dsl_output_prefix: ${dsl_root_dir}/async_level_by_spec/j7es_level      # _XXX.spec would be appended to each generated files
+
+tdl_excluded_pins_spec:
+  dsl_output_file: ${dsl_root_dir}/tdl_excluded_pins_levels.spec
+  pin_setup_content: '''
+  connect = true;
+  level.vrange = 1.0V;
+  level.vforce = 0.0V;
+  level.iclamp = 0.02A;
+  disconnectMode = safe;
+  level.irange = 0.02A;
+  '''
+
+pin_group_spec:
+  dsl_output: ${dsl_root_dir}/j7es_pin_groups.spec
+
+
+test_table:
+  ods_output_dir: ${dsl_root_dir}/testtable
+  prefix_in_master_ods: testtable        # i.e., f.ods => testtable/f.ods in master.ods
+  test_num_start_from: 10000
+
+##########################################################################
+# direct file generation
+gen_files:
+#  demo.txt:              # file name
+#   dir: a_path           # target directory for this file to be created in
+#   content: |            # char '|' is necessary for keeping line breaks in multiline string
+#     multiline string    # content for the file created. Range of content is determined by indent,
+#     multiline string    # i.e., all strings indented under "content:" are the content.
+#     multiline string    # Indents are automatically adjusted according to the first line.
+#  # end of content       # indent same as or less than 'content:' marks the end of content
+
+  domainlevelvalues.spec:
+    dir: ${dsl_root_dir}/level/imports
+    content: '''
+  spec domainlevelvalues {
+    var Voltage Domain_1P2V_PS = 1.2V;
+    var Voltage Domain_3P3V_PS = 3.3V;
+    var Voltage Domain_1P8Va_PS= 1.8V;
+    var Voltage Domain_1PV8c_PS= 1.8V;
+    var Voltage vgbNBTI= 0.0V;
+    var Voltage vgbTEMP=0.0V;
+    var Voltage VMSgb= 0.0V;
+    var Double ENABLE_VMSgb=1.0;
+    var Double ENABLE_scfDPS128=1.0;
+    var Double ENABLE_scfUHC4=1.0;
+    var Double scfDPS128= 0.0;
+  }
+    '''
+
+

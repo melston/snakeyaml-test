@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project name="YamlTest" basedir="." default="build">
+  <property environment="env" />
+
+  <property name="targetJarFile" value="${basedir}/YamlTest.jar"/>
+
+  <property name="libDir"     value="${basedir}/lib"/>
+  <property name="buildDir"   value="${basedir}/build"/>
+  <property name="classesDir" value="${buildDir}/classes"/>
+
+  <property name="sYamlVer"  value="snakeyaml-2.1.jar" />
+
+  <property name="syLib"  value="${libDir}/${sYamlVer}" />
+
+  <property name="compileLogFile" value="${basedir}/compiler.log"/>
+
+  <path id="classpath">
+    <pathelement location="${classesDir}" />
+    <pathelement location="${syLib}" />
+  </path>
+
+  <path id="modulepath">
+    <pathelement location="${libDir}" />
+  </path>
+
+  <path id="sources">
+    <fileset dir="${basedir}/src" >
+      <include name="**/*.java" />
+    </fileset>
+  </path>
+
+  <target name="init">
+    <mkdir dir="${classesDir}"/>
+  </target>
+
+  <target name="clean">
+    <echo message="Running ant 'clean' on ${ant.file}"/>
+    <delete includeEmptyDirs="true" quiet="true">
+      <fileset dir="${classesDir}" />
+      <fileset file="${targetJarFile}"/>
+      <fileset file="${compileLogFile}"/>
+    </delete>
+  </target>
+
+  <target name="compile" depends="init" >
+    <record name="${compileLogFile}" action="start" />
+    <javac destdir="${classesDir}" includeantruntime="false"
+           verbose="false" debug="on" >
+      <classpath refid="classpath" />
+      <modulepath refid="modulepath" />
+      <src path="${basedir}/src"/>
+    </javac>
+    <record name="${compileLogFile}" action="stop" />
+  </target>
+
+  <target name="jar" depends="compile">
+    <jar destfile="${targetJarFile}">
+      <fileset dir="${classesDir}" />
+      <zipfileset src="${syLib}"  excludes="META-INF/**" />
+      <manifest>
+        <attribute name="Main-Class" value="ymldemo.YamlUtils"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="run" depends="build">
+    <java jar ="${targetJarFile}" 
+          classpathref="classpath"
+          modulepath="${libDir}"
+          fork="true" >
+      <classpath>
+        <pathelement location="${syLib}" />
+      </classpath>
+      <jvmarg line="--add-modules org.yaml.snakeyaml" />
+    </java>
+  </target>
+
+  <target name="build" depends="clean,jar" >
+  </target>
+
+  <target name="all" depends="clean,compile,jar">
+  </target>
+
+</project>
