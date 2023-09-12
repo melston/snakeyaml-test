@@ -19,6 +19,8 @@ class Rep {
 
 public class YamlUtils {
 
+    // These options are here so we can make use of the comment processing
+    // feature of snakeyaml.
     LoaderOptions loaderOptions;
     DumperOptions dumperOptions;
     Yaml yaml;
@@ -42,11 +44,23 @@ public class YamlUtils {
         return new String(new char[len]).replace('\0', c);
     }
 
+    /**
+     * Convenience function to print to <code>System.out</code> a visual boundary between
+     * lines consisting of a message centered in a sequence of a single character repeated
+     * to the width of 80 characters.
+     * @param c the character to repeat
+     * @param msg the message to put inside the repeated characters.
+     */
     private static void printBoundary(char c, String msg) {
         int l = (78 - msg.length())/2;
         System.out.println("\n" + repeated(c, l) + " " + msg + " " + repeated(c, l) + "\n");
     }
 
+    /**
+     * Trim only the trailing spaces from a string
+     * @param str the string to trim the spaces from.
+     * @return the resulting string after the trim operation.
+     */
     private static String trimTrailingBlanks(String str)
     {
         if( str == null)
@@ -60,6 +74,22 @@ public class YamlUtils {
         return str.substring( 0, len);
     } 
 
+    /**
+     * Handle triple-quoted literal blocks.
+     * 
+     * We have the requirement of supporting a different literal block style started with three
+     * single-quotes.  This doesn't require additional indentation and allows the user to paste
+     * code copied from an editor and guarantees that the leading spaces will be kept.  It is
+     * a pain to manage this but it is a requirement of our users.
+     * 
+     * The approach is to maintain a list of substitutions to make in the original string
+     * and return this so it can be performed separately.  We may want to combine this last
+     * step into this function in the future so we simply return the modified text.
+     * 
+     * @param txt a <code>String</code> with the contents of the YAML file.
+     * @return a <code>List&lt;Rep&gt;</code> containing all the strings (normally multi-line)
+     *         in the original text that have to be replaced, and their replacements.
+     */
     private static List<Rep> extractTripleQuoteStr(String txt) {
         List<Rep> result = new ArrayList<>();
 
@@ -88,6 +118,11 @@ public class YamlUtils {
         return result;
     }
 
+    /**
+     * Load a yaml-file, performing any preprocessing necessary to handle the triple-quoted literal blocks.
+     * @param ymlFile the path to the yaml-file
+     * @return a <code>Node</code> object that is the root of the resulting graph.
+     */
     public Node loadYml(String ymlFile) {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(ymlFile), "UTF-8"));
@@ -121,6 +156,15 @@ public class YamlUtils {
         }
     }
 
+    /**
+     * Get a child node of a specified parent node with the given name.
+     * @param parent  the parent node
+     * @param childName the name of the child node.
+     * @return the child <code>Node</code>, or <code>null</code> if a child 
+     *         with the given name doesn't exist.
+     * @throws IllegalArgumentException if the parent node is not a 
+     *         <code>MappingNode</code>
+     */
     private Node getChildNode(Node parent, String childName) {
         if (parent == null) return null;
         if (parent.getNodeId() == NodeId.scalar) {
@@ -142,6 +186,15 @@ public class YamlUtils {
         return null;
     }
 
+    /**
+     * Get a <code>Node</code> object with the given path.  The path is specified by
+     * using '/' to separate the different levels of the graph.  This is sufficient for
+     * our case since this is defined to be an invalid character for node names in our
+     * application.
+     * @param root the root <code>Node</code> of the graph
+     * @param name the name of the <code>Node</code> to find.
+     * @return the <code>Node</code>, if found.  <code>null</code> otherwise.
+     */
     private Node getNodeByName(Node root, String name) {
         Node res = root;
 
